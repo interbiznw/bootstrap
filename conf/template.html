@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>%%COIN_FULLNAME%% Bootstrap Archive</title>
+		<link rel="shortcut icon" type="image/x-icon" href="/img/%%COIN_NAME%%.png">
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/github-markdown-css/2.10.0/github-markdown.min.css" />
+		<style type="text/css">
+			code{
+				border: 1px solid black;
+				background-color: #eeeeee;
+				padding: 2px;
+				display: inline-block;
+			}
+		</style>
+	</head>
+	<body>
+		<article class="markdown-body">
+			<h1><a href="https://0x03.services" target="_blank"><img src="/img/logo.png" alt="0x03.services logo" /></a></h1>
+			<font size=2><b>Offering all sorts of crypto-currency related hosting services, tailored to your circumstances!</b></font>
+			<br />
+
+			<h1><img width=32 height=32 src="/img/%%COIN_NAME%%.png" alt="%%COIN_FULLNAME%% Icon" style="float: left;">&nbsp;%%COIN_FULLNAME%% Bootstrap</h1>
+
+			<p>
+				The archive will be regenerated every 24 hours roughly (see timestamp below). The archives do not contain subdirectories, keep that in mind when extracting. If there is something wrong with the files or the server, ping <code>0x03</code> on <a href="https://discord.gg/edWqZcD" target="_blank">0x03.services Discord</a>
+			</p>
+
+			<p>
+				<h2>Coin info</h2>
+				<ul>
+					<li>Website: <a href="%%COIN_WEBSITE%%" target="_blank">%%COIN_WEBSITE%%</a></li>
+					<li>Github: <a href="%%COIN_GITHUB%%" target="_blank">%%COIN_GITHUB%%</a></li>
+					<li>Bitcointalk: <a href="%%COIN_BITCOINTALK%%" target="_blank">%%COIN_BITCOINTALK%%</a></li>
+					<li>Discord: <a href="%%COIN_DISCORD%%" target="_blank">%%COIN_DISCORD%%</a></li>
+					<li>Explorer: <a href="%%COIN_EXPLORER%%" target="_blank">%%COIN_EXPLORER%%</a></li>
+				</ul>
+
+				<h2>Snapshot info</h2>
+				<ul>
+					<li>Snapshot timestamp: <b>%%BOOTSTRAP_TIME%% UTC</b></li>
+					<li>Block height at snapshot: <b><a href="%%COIN_EXPLORER_BLOCK%%%%BOOTSTRAP_BEST_HASH%%" target="_blank">%%BOOTSTRAP_HEIGHT%%</a></b></li>
+					<li>Block hash: <b><a href="%%COIN_EXPLORER_BLOCK%%%%BOOTSTRAP_BEST_HASH%%" target="_blank">%%BOOTSTRAP_BEST_HASH%%</a></b></li>
+					<li>Notes: <i>%%COIN_NOTES%%</i></li>
+				</ul>
+
+				<h2>GZipped Tarball</h2>	
+				<ul>
+					<li>Archive: <a href="/%%COIN_NAME%%/%%BOOTSTRAP_FILE_TGZ%%" target="_blank">%%BOOTSTRAP_FILE_TGZ%%</a></li>
+					<li>File size: <b>%%BOOTSTRAP_SIZE_TGZ%%</b></li>
+					<li>
+						Checksums: <a href="/%%COIN_NAME%%/%%BOOTSTRAP_FILE_TGZ%%.md5sum" target="_blank">md5</a>, 
+						<a href="/%%COIN_NAME%%/%%BOOTSTRAP_FILE_TGZ%%.sha256sum" target="_blank">sha256</a>,
+						<a href="/%%COIN_NAME%%/%%BOOTSTRAP_FILE_TGZ%%.sha512sum" target="_blank">sha512</a>
+					</li>
+				</ul>
+
+				<h2>Zipfile</h2>
+				<ul>
+					<li>Archive: <a href="/%%COIN_NAME%%/%%BOOTSTRAP_FILE_ZIP%%" target="_blank">%%BOOTSTRAP_FILE_ZIP%%</a></li>
+					<li>File size: <b>%%BOOTSTRAP_SIZE_ZIP%%</b></li>
+					<li>
+						Checksums: <a href="/%%COIN_NAME%%/%%BOOTSTRAP_FILE_ZIP%%.md5sum" target="_blank">md5</a>, 
+						<a href="/%%COIN_NAME%%/%%BOOTSTRAP_FILE_ZIP%%.sha256sum" target="_blank">sha256</a>,
+						<a href="/%%COIN_NAME%%/%%BOOTSTRAP_FILE_ZIP%%.sha512sum" target="_blank">sha512</a>
+					</li>
+				</ul>
+			</p>
+
+			<p>
+				<font size=1>The bootstrap service is one of many <a href="https://0x03.services" target="_blank">0x03.services</a> - Donations: %%COIN_DONATION_ADDRESS%%</font>
+			</p>
+		</article>
+	</body>
+</html>
+<!--// EOF //-->

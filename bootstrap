@@ -1,0 +1,117 @@
+#!/bin/bash -x
+
+. /etc/bootstrap/bootstrap.conf
+
+ARG_COIN="${1}"
+
+function datestamp {
+	echo -n "$(env TZ=\"${BOOTSTRAP_TIMEZONE}\" date)"
+}
+
+if [ ! -f "${BOOTSTRAP_CONFDIR}/coins/${1}.conf" ]; then
+	echo "$(datestamp) Coin \"${1}\" is not configured, exiting!"
+	exit 1
+fi
+
+. ${BOOTSTRAP_CONFDIR}/coins/${1}.conf
+
+#
+# step 1/7 - get current chain height / best block hash
+#
+COIN_CURRENT_HEIGHT="$(${COIN_CLI} ${COIN_CLI_OPTIONS} getblockcount)"
+COIN_CURRENT_BESTHASH="$(${COIN_CLI} ${COIN_CLI_OPTIONS} getbestblockhash)"
+
+
+#
+# step 2/7 - send 'stop' call and wait for wallet to stop - or exit if daemon is down
+#
+COIN_CURRENT_PID="$(pgrep -U `whoami` -a|grep ${COIN_NEEDLE}|awk '{print $1}'|head -n1)"
+
+if [ -z "${COIN_CURRENT_PID}" ]; then
+	echo "$(datestamp) ${COIN_FULLNAME} daemon not running, exiting!"
+	exit 1
+fi
+
+${COIN_CLI} ${COIN_CLI_OPTIONS} stop
+
+while true; do
+	if [ ! -d "/proc/${COIN_CURRENT_PID}" ]; then
+		break
+	else
+		sleep 1
+		echo -n .
+	fi
+	echo
+done
+
+#
+# step 3/7 - create bootstrap archives
+#
+cd ${COIN_DATADIR}
+
+# tar first
+COIN_OUTFILE_TGZ="${COIN_SYMBOL}-${BOOTSTRAP_FILE_SUFFIX}.${BOOTSTRAP_FILE_TGZ_EXT}"
+tar ${BOOTSTRAP_TAR_OPTIONS} ./${COIN_OUTFILE_TGZ} ${COIN_FILELIST}
+COIN_OUTFILE_SIZE_TGZ="$(du -sh -x ${COIN_OUTFILE_TGZ} | awk '{print $1}')"
+
+# zip second
+COIN_OUTFILE_ZIP="${COIN_SYMBOL}-${BOOTSTRAP_FILE_SUFFIX}.${BOOTSTRAP_FILE_ZIP_EXT}"
+zip ${BOOTSTRAP_ZIP_OPTIONS} ./${COIN_OUTFILE_ZIP} ${COIN_FILELIST}
+COIN_OUTFILE_SIZE_ZIP="$(du -sh -x ${COIN_OUTFILE_ZIP} | awk '{print $1}')"
+
+
+#
+# step 4/7 - create checksum files
+#
+cd ${COIN_DATADIR}
+
+# again, tar first
+md5sum    ${COIN_OUTFILE_TGZ} > ${COIN_OUTFILE_TGZ}.md5sum
+sha256sum ${COIN_OUTFILE_TGZ} > ${COIN_OUTFILE_TGZ}.sha256sum
+sha512sum ${COIN_OUTFILE_TGZ} > ${COIN_OUTFILE_TGZ}.sha512sum
+
+# zip second
+md5sum    ${COIN_OUTFILE_ZIP} > ${COIN_OUTFILE_ZIP}.md5sum
+sha256sum ${COIN_OUTFILE_ZIP} > ${COIN_OUTFILE_ZIP}.sha256sum
+sha512sum ${COIN_OUTFILE_ZIP} > ${COIN_OUTFILE_ZIP}.sha512sum
+
+#
+# step 5/7 - start wallet again
+#
+cd ${COIN_DATADIR}
+${COIN_DAEMON} ${COIN_DAEMON_OPTIONS} 1>/dev/null 2>&1
+
+#
+# step 6/7 - generate html
+#
+COIN_TEMPFILE="$(tempfile)"
+COIN_TIMESTAMP="$(datestamp)"
+
+cat ${BOOTSTRAP_CONFDIR}/template.html | sed "s/%%COIN_NAME%%/${COIN_NAME}/g"                             > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_FULLNAME%%/${COIN_FULLNAME}/g"                     > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_SYMBOL%%/${COIN_SYMBOL}/g"                         > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_WEBSITE%%/${COIN_WEBSITE}/g"                       > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_GITHUB%%/${COIN_GITHUB}/g"                         > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_BITCOINTALK%%/${COIN_BITCOINTALK}/g"               > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_DISCORD%%/${COIN_DISCORD}/g"                       > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_EXPLORER%%/${COIN_EXPLORER}/g"                     > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%BLOCKCHAIN_NAME%%/${COIN_FULL_NAME}/"                   > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%BOOTSTRAP_TIME%%/${COIN_TIMESTAMP}/"                    > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%BOOTSTRAP_FILE_TGZ%%/$(basename ${COIN_OUTFILE_TGZ})/g" > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%BOOTSTRAP_FILE_ZIP%%/$(basename ${COIN_OUTFILE_ZIP})/g" > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%BOOTSTRAP_SIZE_TGZ%%/${COIN_OUTFILE_SIZE_TGZ}/"         > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%BOOTSTRAP_SIZE_ZIP%%/${COIN_OUTFILE_SIZE_ZIP}/"         > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%BOOTSTRAP_HEIGHT%%/${COIN_CURRENT_HEIGHT}/g"            > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%BOOTSTRAP_BEST_HASH%%/${COIN_CURRENT_BESTHASH}/g"       > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_EXPLORER_BLOCK%%/${COIN_EXPLORER_BLOCK}/g"         > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_NOTES%%/${COIN_NOTES}/"                            > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+cat ${COIN_TEMPFILE}                   | sed "s/%%COIN_DONATION_ADDRESS%%/${COIN_DONATION_ADDRESS}/"      > ${COIN_TEMPFILE}.tmp; mv ${COIN_TEMPFILE}.tmp ${COIN_TEMPFILE}
+
+#
+# step 7/7 - move new files in place
+#
+mv ${COIN_DATADIR}/${COIN_OUTFILE_TGZ}* ${BOOTSTRAP_WEBDIR}/${COIN_NAME}/
+mv ${COIN_DATADIR}/${COIN_OUTFILE_ZIP}* ${BOOTSTRAP_WEBDIR}/${COIN_NAME}/
+mv ${COIN_TEMPFILE} ${BOOTSTRAP_WEBDIR}/${COIN_NAME}/${COIN_SYMBOL}.html
+
+# EOF
